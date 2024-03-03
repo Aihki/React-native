@@ -1,9 +1,13 @@
 import {NavigationProp, ParamListBase} from '@react-navigation/native';
 import {Card, Icon, ListItem, Button, Avatar, Text} from '@rneui/themed';
+import {Alert} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {MediaItemWithOwner} from '../types/DBTypes';
 import {useUserContext} from '../hooks/ContextHooks';
+import {useBook} from '../hooks/apiHooks';
 import Rating from './Rating';
 import Likes from './Likes';
+import { useUpdateContext } from '../hooks/UpdateHooks';
 
 type Props = {
   media: MediaItemWithOwner;
@@ -12,6 +16,21 @@ type Props = {
 
 const MediaListItem = ({media, navigation}: Props) => {
   const {user} = useUserContext();
+  const {deleteBook} = useBook();
+  const {update, setUpdate} = useUpdateContext();
+
+  const doBookDelete = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        const result = await deleteBook(media.media_id, token);
+        setUpdate(!update);
+        navigation.navigate('My Files');
+      }
+    } catch (error) {
+      Alert.alert('Error', (error as Error).message);
+    }
+  };
 
   return (
     <Card>
@@ -36,7 +55,7 @@ const MediaListItem = ({media, navigation}: Props) => {
             </Button>
             <Button
               onPress={() => {
-                console.log('media deleted mayby');
+                doBookDelete();
               }}
               buttonStyle={{backgroundColor: 'red'}}
             >

@@ -145,7 +145,11 @@ const RegisterForm = ({handletoggle}: {handletoggle: () => void}) => {
         )}
         name="email"
       />
-      <Button title="Register" onPress={handleSubmit(doRegister)} />
+      <Button
+        title="Register"
+        onPress={handleSubmit(doRegister)}
+        buttonStyle={{backgroundColor: 'green'}}
+      />
     </Card>
   );
 };

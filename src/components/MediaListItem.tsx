@@ -5,9 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {MediaItemWithOwner} from '../types/DBTypes';
 import {useUserContext} from '../hooks/ContextHooks';
 import {useBook} from '../hooks/apiHooks';
+import {useUpdateContext} from '../hooks/UpdateHooks';
 import Rating from './Rating';
 import Likes from './Likes';
-import { useUpdateContext } from '../hooks/UpdateHooks';
 
 type Props = {
   media: MediaItemWithOwner;

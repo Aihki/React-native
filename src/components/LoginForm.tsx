@@ -58,7 +58,11 @@ const LoginForm = () => {
         )}
         name="password"
       />
-      <Button title="Login" onPress={handleSubmit(doLogin)} />
+      <Button
+        title="Login"
+        onPress={handleSubmit(doLogin)}
+        buttonStyle={{backgroundColor: 'green'}}
+      />
     </Card>
   );
 };

@@ -1,9 +1,11 @@
+import * as FileSystem from 'expo-file-system';
 import {useEffect, useState} from 'react';
 import {
   Comment,
   Like,
   MediaItem,
   MediaItemWithOwner,
+  Rating,
   User,
 } from '../types/DBTypes';
 import {fetchData} from '../lib/utils';
@@ -15,9 +17,11 @@ import {
   UploadResponse,
   UserResponse,
 } from '../types/MessageTypes';
+import {useUpdateContext} from './UpdateHooks';
 
 const useBook = () => {
   const [mediaArray, setMediaArray] = useState<MediaItemWithOwner[]>([]);
+  const {update} = useUpdateContext();
 
   const getBook = async () => {
     try {
@@ -47,7 +51,7 @@ const useBook = () => {
 
   useEffect(() => {
     getBook();
-  }, []);
+  }, [update]);
 
   const postBook = async (
     file: UploadResponse,
@@ -79,7 +83,36 @@ const useBook = () => {
     );
   };
 
-  return {mediaArray, postBook};
+  const putBook = async (
+    inputs: Pick<MediaItem, 'title' | 'description'>,
+    token: string,
+    media_id: number,
+  ) => {
+    return await fetchData<MessageResponse>(
+      process.env.EXPO_PUBLIC_MEDIA_API + '/media/' + media_id,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+        body: JSON.stringify(inputs),
+      },
+    );
+  };
+
+  const deleteBook = async (media_id: number, token: string) => {
+    return await fetchData<MessageResponse>(
+      process.env.EXPO_PUBLIC_MEDIA_API + '/media/' + media_id,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
+      },
+    );
+  };
+  return {mediaArray, postBook, putBook, deleteBook};
 };
 
 const useUser = () => {
@@ -171,7 +204,27 @@ const useFile = () => {
       options,
     );
   };
-  return {postFile};
+
+  const postExpoFile = async (
+    imageUri: string,
+    token: string,
+  ): Promise<UploadResponse> => {
+    const fileResult = await FileSystem.uploadAsync(
+      process.env.EXPO_PUBLIC_UPLOAD_SERVER + '/upload',
+      imageUri,
+      {
+        httpMethod: 'POST',
+        uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+        fieldName: 'file',
+        headers: {
+          Authorization: 'Bearer ' + token,
+        },
+      },
+    );
+    return JSON.parse(fileResult.body);
+  };
+
+  return {postFile, postExpoFile};
 };
 
 const useLike = () => {
@@ -229,11 +282,56 @@ const useLike = () => {
 
   return {postLike, deleteLike, getCountByMediaId, getUserLike};
 };
+const useRating = () => {
+  const postRating = async (
+    rating_value: number,
+    media_id: number,
+    token: string,
+  ) => {
+    // Send a POST request to /ratings with the rating object and the token in the Authorization header.
+    const options: RequestInit = {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({rating_value, media_id}),
+    };
+
+    return await fetchData<MessageResponse>(
+      process.env.EXPO_PUBLIC_MEDIA_API + '/ratings',
+      options,
+    );
+  };
+
+  const getRatingByMediaId = async (media_id: number) => {
+    // Send a GET request to /ratings/:media_id to get the average rating and the number of ratings.
+    return await fetchData<{average: number}>(
+      process.env.EXPO_PUBLIC_MEDIA_API + '/ratings/average/' + media_id,
+    );
+  };
+
+  const getUserRating = async (token: string) => {
+    // Send a GET request to ratings/byuser to get the user's ratings.
+    const options: RequestInit = {
+      method: 'GET',
+      headers: {
+        Authorization: 'Bearer ' + token,
+      },
+    };
+    return await fetchData<Rating[]>(
+      process.env.EXPO_PUBLIC_MEDIA_API + '/ratings/byuser',
+      options,
+    );
+  };
+
+  return {postRating, getRatingByMediaId, getUserRating};
+};
+
 const useComment = () => {
   const postComment = async (
     comment_text: string,
     media_id: number,
-    user_id: number,
     token: string,
   ) => {
     // TODO: Send a POST request to /comments with the comment object and the token in the Authorization header.
@@ -243,7 +341,7 @@ const useComment = () => {
         Authorization: 'Bearer ' + token,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({comment_text, media_id, user_id}),
+      body: JSON.stringify({comment_text, media_id}),
     };
     return await fetchData<MessageResponse>(
       process.env.EXPO_PUBLIC_MEDIA_API + '/comments',
@@ -252,7 +350,6 @@ const useComment = () => {
   };
   const {getUserById} = useUser();
   const getCommentsByMediaId = async (media_id: number) => {
-    // TODO: Send a GET request to /comments/:media_id to get the comments.
     const comments = await fetchData<Comment[]>(
       process.env.EXPO_PUBLIC_MEDIA_API + '/comments/bymedia/' + media_id,
     );
@@ -270,4 +367,12 @@ const useComment = () => {
   return {postComment, getCommentsByMediaId};
 };
 
-export {useBook, useUser, useAuthentication, useFile, useLike, useComment};
+export {
+  useBook,
+  useUser,
+  useAuthentication,
+  useFile,
+  useLike,
+  useComment,
+  useRating,
+};

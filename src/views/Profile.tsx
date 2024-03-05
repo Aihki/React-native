@@ -35,7 +35,10 @@ const Profile = () => {
               <Icon name="folder" color="white" />
             </Button>
             <Card.Divider />
-            <Button onPress={handleLogout}>
+            <Button
+              onPress={handleLogout}
+              buttonStyle={{backgroundColor: 'red'}}
+            >
               Logout &nbsp;
               <Icon name="logout" color="white" />
             </Button>
